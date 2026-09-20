@@ -11,21 +11,44 @@ def print_header(header):
 
 def main():
     print_header("Welcome to GPS radius checker")
-    gps_choice = input("Do you want us to check your current location : ")
-    if (
-        ("Yes" in gps_choice)
-        or ("yaah" in gps_choice)
-        or ("1" in gps_choice)
-        or ("y" in gps_choice)
-    ):
-        fnf.check_location()
-    elif (
-        ("No" in gps_choice)
-        or ("na" in gps_choice)
-        or ("0" in gps_choice)
-        or ("n" in gps_choice)
-    ):
-        fnf.manual_location_entry()
+    gps_choice = (
+        input("Do you want to enter your current coordinates manually? ")
+        .strip()
+        .lower()
+    )
+
+    if gps_choice in {"yes", "yaah", "y", "1", "yeah", "sure"}:
+        current = fnf.manual_location_entry()
+        if current.get("status") == "error":
+            return
+    else:
+        print("Current coordinates were not entered.")
+        return
+
+    destination_choice = (
+        input("Do you want to enter the destination coordinates manually? ")
+        .strip()
+        .lower()
+    )
+    if destination_choice in {"yes", "y", "1", "yeah", "sure"}:
+        destination = fnf.manual_destination_entry()
+        if destination.get("status") == "error":
+            return
+
+        distance = fnf.calculate_distance_in_meters(
+            current["location"], destination["location"]
+        )
+        print(f"Distance from current location to destination: {distance:.0f} meters")
+
+        csv_result = fnf.save_destination_to_csv(
+            current["location"],
+            destination["location"],
+            distance,
+        )
+        if csv_result.get("status") == "success":
+            print(f"Destination saved in location.csv: {csv_result.get('file_path')}")
+        else:
+            print(csv_result.get("message"))
 
 
 if __name__ == "__main__":

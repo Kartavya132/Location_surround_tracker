@@ -1,11 +1,12 @@
+import csv
+import os
+import tempfile
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import requests
-
-import main
 import func.function
-from func.request import location_check, validate_location_result
+import main
+from func.request import calculate_distance_in_meters, save_destination_to_csv
 
 
 class TestProjectFiles(unittest.TestCase):
@@ -15,60 +16,45 @@ class TestProjectFiles(unittest.TestCase):
     def test_function_module_imports(self):
         self.assertIsNotNone(func.function)
 
-    @patch("func.request.requests.get")
-    def test_location_check_success(self, mock_get):
-        ip_response = MagicMock()
-        ip_response.raise_for_status.return_value = None
-        ip_response.json.return_value = {"ip": "203.0.113.10"}
-
-        geo_response = MagicMock()
-        geo_response.raise_for_status.return_value = None
-        geo_response.json.return_value = {
-            "latitude": 12.345,
-            "longitude": 67.890,
-            "city": "Sample City",
-            "region": "Sample Region",
-            "country_name": "Sample Country",
-            "postal": "12345",
-            "timezone": "UTC",
-        }
-
-        mock_get.side_effect = [ip_response, geo_response]
-
-        result = location_check()
+    @patch("builtins.input", side_effect=["12.5", "67.8"])
+    def test_manual_location_entry(self, _mock_input):
+        result = func.function.manual_location_entry()
 
         self.assertEqual(result["status"], "success")
-        self.assertEqual(result["ip"], "203.0.113.10")
-        self.assertEqual(result["city"], "Sample City")
-        self.assertEqual(result["location"], (12.345, 67.89))
+        self.assertEqual(result["location"], (12.5, 67.8))
 
-    @patch(
-        "func.request.requests.get",
-        side_effect=requests.RequestException("network failed"),
-    )
-    def test_location_check_handles_network_error(self, _mock_get):
-        result = location_check()
+    def test_calculate_distance_in_meters(self):
+        current_location = (40.7128, -74.0060)
+        destination = (34.0522, -118.2437)
 
-        self.assertEqual(result["status"], "error")
-        self.assertIn("Network error", result["message"])
+        distance_meters = calculate_distance_in_meters(current_location, destination)
 
-    def test_validate_location_result(self):
-        valid_result = {
-            "status": "success",
-            "ip": "203.0.113.10",
-            "latitude": 12.345,
-            "longitude": 67.89,
-            "city": "Sample City",
-            "region": "Sample Region",
-            "country": "Sample Country",
-            "postal_code": "12345",
-            "timezone": "UTC",
-            "location": (12.345, 67.89),
-        }
-        invalid_result = {"status": "success", "ip": None, "latitude": "bad"}
+        self.assertAlmostEqual(distance_meters, 3940000, delta=50000)
 
-        self.assertTrue(validate_location_result(valid_result))
-        self.assertFalse(validate_location_result(invalid_result))
+    def test_save_destination_to_csv(self):
+        with tempfile.NamedTemporaryFile("w+", delete=False, newline="") as tmp:
+            tmp_path = tmp.name
+
+        try:
+            result = save_destination_to_csv(
+                (40.7128, -74.0060),
+                (34.0522, -118.2437),
+                3940000,
+                file_path=tmp_path,
+            )
+
+            self.assertEqual(result["status"], "success")
+
+            with open(tmp_path, newline="", encoding="utf-8") as csv_file:
+                rows = list(csv.DictReader(csv_file))
+
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(float(rows[0]["current_latitude"]), 40.7128)
+            self.assertEqual(float(rows[0]["destination_latitude"]), 34.0522)
+            self.assertEqual(float(rows[0]["distance_meters"]), 3940000)
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
 
 
 if __name__ == "__main__":

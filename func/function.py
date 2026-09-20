@@ -1,4 +1,34 @@
-from .request import location_check, validate_location_result
+from .request import (
+    calculate_distance_in_meters,
+    google_maps_destination_lookup,
+    location_check,
+    save_destination_to_csv,
+    validate_location_result,
+)
+
+
+def manual_destination_entry():
+    """Ask the user to enter a destination coordinate pair manually."""
+    print("\nEnter destination coordinates manually")
+    try:
+        latitude = float(input("Destination latitude: "))
+        longitude = float(input("Destination longitude: "))
+    except ValueError:
+        print("Invalid input. Please enter numeric destination coordinates.")
+        return {
+            "status": "error",
+            "message": "Destination coordinates must be numeric.",
+        }
+
+    location = (latitude, longitude)
+    print(f"Destination saved: {location}")
+
+    return {
+        "status": "success",
+        "location": location,
+        "latitude": latitude,
+        "longitude": longitude,
+    }
 
 
 def manual_location_entry():
@@ -59,4 +89,44 @@ def check_location():
         "location": location,
         "latitude": result.get("latitude"),
         "longitude": result.get("longitude"),
+    }
+
+
+def track_destination():
+    """Ask the user for the current and destination coordinates manually and compute the distance."""
+    current_location = manual_location_entry()
+    if current_location.get("status") == "error":
+        return current_location
+
+    destination = manual_destination_entry()
+    if destination.get("status") == "error":
+        return destination
+
+    distance_meters = calculate_distance_in_meters(
+        current_location["location"], destination["location"]
+    )
+
+    print("Destination location details:")
+    print(f"Current location: {current_location.get('location')}")
+    print(f"Destination coordinates: {destination.get('location')}")
+    print(f"Distance from current location: {distance_meters:.0f} meters")
+
+    saved = save_destination_to_csv(
+        current_location["location"],
+        destination["location"],
+        distance_meters,
+    )
+    if saved.get("status") == "success":
+        print(f"Saved destination route to {saved.get('file_path')}")
+    else:
+        print(saved.get("message", "Unable to save route to CSV."))
+
+    return {
+        "status": "success",
+        "current_location": current_location.get("location"),
+        "destination": destination.get("location"),
+        "latitude": destination.get("latitude"),
+        "longitude": destination.get("longitude"),
+        "distance_meters": distance_meters,
+        "csv": saved,
     }
