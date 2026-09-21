@@ -280,9 +280,10 @@ def save_destination_to_csv(
         ]
 
         file_exists = csv_path.exists()
+        file_is_empty = file_exists and csv_path.stat().st_size == 0
         with csv_path.open("a", newline="", encoding="utf-8") as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-            if not file_exists:
+            if not file_exists or file_is_empty:
                 writer.writeheader()
             writer.writerow(
                 {

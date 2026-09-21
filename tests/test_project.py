@@ -56,6 +56,18 @@ class TestProjectFiles(unittest.TestCase):
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
 
+    @patch("func.function.winsound.Beep")
+    def test_check_distance_alarm(self, mock_beep):
+        current_location = (40.7128, -74.0060)
+        destination = (40.7129, -74.0061)
+
+        result = func.function.check_distance_alarm(current_location, destination, 2000)
+
+        self.assertEqual(result["status"], "success")
+        self.assertTrue(result["alarm_triggered"])
+        self.assertLess(result["distance_meters"], 2000)
+        mock_beep.assert_called()
+
 
 if __name__ == "__main__":
     unittest.main()

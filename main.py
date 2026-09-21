@@ -40,6 +40,17 @@ def main():
         )
         print(f"Distance from current location to destination: {distance:.0f} meters")
 
+        alarm_result = fnf.prompt_distance_alarm(
+            current["location"], destination["location"]
+        )
+        if alarm_result.get("status") == "success":
+            print(
+                f"Alarm triggered: {alarm_result.get('alarm_triggered')} | "
+                f"Threshold: {alarm_result.get('threshold_meters')} m"
+            )
+        else:
+            print(alarm_result.get("message", "Unable to set the alarm threshold."))
+
         csv_result = fnf.save_destination_to_csv(
             current["location"],
             destination["location"],
