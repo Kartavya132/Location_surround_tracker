@@ -9,6 +9,22 @@ def print_header(header):
     print("=" * 60)
 
 
+def build_distance_summary(
+    current_location, destination, distance_meters, threshold_meters=None
+):
+    """Return a human-friendly distance report for CLI and GUI output."""
+    summary = (
+        f"Current location: {tuple(current_location)}\n"
+        f"Destination: {tuple(destination)}\n"
+        f"Distance: {float(distance_meters):.0f} meters"
+    )
+
+    if threshold_meters is not None:
+        summary += f"\nAlarm threshold: {float(threshold_meters):.0f} meters"
+
+    return summary
+
+
 def main():
     print_header("Welcome to GPS radius checker")
     gps_choice = (
@@ -38,7 +54,11 @@ def main():
         distance = fnf.calculate_distance_in_meters(
             current["location"], destination["location"]
         )
-        print(f"Distance from current location to destination: {distance:.0f} meters")
+        print(
+            build_distance_summary(
+                current["location"], destination["location"], distance
+            )
+        )
 
         alarm_result = fnf.prompt_distance_alarm(
             current["location"], destination["location"]

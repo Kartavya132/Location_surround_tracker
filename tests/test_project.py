@@ -23,6 +23,17 @@ class TestProjectFiles(unittest.TestCase):
         self.assertEqual(result["status"], "success")
         self.assertEqual(result["location"], (12.5, 67.8))
 
+    def test_distance_summary_message(self):
+        summary = main.build_distance_summary(
+            (40.7128, -74.0060),
+            (34.0522, -118.2437),
+            3940000,
+            2000,
+        )
+
+        self.assertIn("3940000", summary)
+        self.assertIn("2000", summary)
+
     def test_calculate_distance_in_meters(self):
         current_location = (40.7128, -74.0060)
         destination = (34.0522, -118.2437)

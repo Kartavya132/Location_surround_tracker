@@ -1,3 +1,4 @@
+import time
 import winsound
 
 from .request import (
@@ -94,6 +95,25 @@ def check_location():
     }
 
 
+def play_alarm_sound():
+    """Play a short, clear alarm pattern that is easier to notice than a single tone."""
+    alarm_pattern = [
+        (880, 180),
+        (660, 180),
+        (980, 220),
+        (660, 220),
+        (880, 180),
+    ]
+
+    try:
+        for frequency, duration in alarm_pattern:
+            winsound.Beep(frequency, duration)
+            time.sleep(0.08)
+    except Exception:
+        for _ in range(3):
+            print("\a")
+
+
 def check_distance_alarm(current_location, destination, user_distance_meters):
     """Trigger an alarm when the current distance is less than a user-set threshold."""
     try:
@@ -114,10 +134,7 @@ def check_distance_alarm(current_location, destination, user_distance_meters):
     alarm_triggered = distance_meters < threshold_meters
 
     if alarm_triggered:
-        try:
-            winsound.Beep(1000, 500)
-        except Exception:
-            print("\a")
+        play_alarm_sound()
 
     return {
         "status": "success",
